@@ -1,7 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\web\BlogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -9,17 +12,22 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 |
 | Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
 |
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -28,4 +36,21 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+Route::group(['prefix' => 'dashboard', 'middleware' => ['auth','admin']], function () {
+    Route::get('/', function () {
+        return view('dashboard');
+    })->name("dashboard");
+    Route::resources([
+        'post' => App\Http\Controllers\Dashboard\PostController::class,
+        'category' => App\Http\Controllers\Dashboard\CategoryController::class,
+    ]);
+});
+
+Route::group(['prefix' => 'blog'], function(){
+    Route::controller(BlogController::class)->group(function (){
+        Route::get('/', 'index') -> name ('web.blog.index');
+        Route::get('/detail/{post}', 'show') -> name ('web.blog.show');
+    });
+});
+
+require __DIR__ . '/auth.php';

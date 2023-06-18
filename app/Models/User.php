@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function accessDashboard(): bool
     {
-        return $this->hasRole('Editor');
+        return $this->hasRole('guest');
     }
 
     public function posts()
